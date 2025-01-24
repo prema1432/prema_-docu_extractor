@@ -10,3 +10,4 @@ python-dotenv==1.0.1
 langchain-groq==0.2.3
 langchain-google-genai==2.0.9
 langchain-chroma==0.2.0
+pysqlite3-binary
