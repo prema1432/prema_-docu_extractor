@@ -4,16 +4,19 @@ import streamlit as st
 # from langchain.vectorstores import Chroma
 import os
 
+from langchain_community.document_loaders import PyPDFLoader
+
 
 # Function to create ChromaDB from PDF
-# def create_chroma_db(pdf_file, openai_api_key):
-#     loader = PyPDFLoader(pdf_file)
-#     documents = loader.load()
-#
-#     embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
-#     db = Chroma.from_documents(documents, embeddings)
-#
-#     return db
+def create_chroma_db(pdf_file, openai_api_key):
+    loader = PyPDFLoader(pdf_file)
+    documents = loader.load()
+
+    # embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
+    # db = Chroma.from_documents(documents, embeddings)
+
+    # return db
+    return documents
 
 
 # Function to search in ChromaDB
@@ -37,18 +40,19 @@ pdf_file = st.file_uploader("Upload a PDF file", type="pdf")
 if st.button("Process"):
     if openai_api_key and keywords and pdf_file:
         # Create ChromaDB
-        # db = create_chroma_db(pdf_file, openai_api_key)
+        db = create_chroma_db(pdf_file, openai_api_key)
         st.success("ChromaDB created successfully!")
 
         # Search in the ChromaDB
+        results = db
         # results = search_chroma_db(db, keywords)
 
-        # if results:
-        #     st.write("Search Results:")
+        if results:
+            st.write("Search Results:")
         #     for result in results:
         #         st.write(result.page_content)
-        # else:
-        #     st.write("No results found.")
+        else:
+            st.write("No results found.")
 
         # Clean up: Delete ChromaDB
         # del db
