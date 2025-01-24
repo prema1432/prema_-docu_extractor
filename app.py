@@ -1,3 +1,5 @@
+import os
+import shutil
 import tempfile
 
 import streamlit as st
@@ -9,6 +11,8 @@ from langchain_groq import ChatGroq
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langgraph.graph import START, StateGraph
 from typing_extensions import List, TypedDict
+from langchain_chroma import Chroma
+import uuid
 
 # from langchain.document_loaders import PyPDFLoader
 # from langchain.embeddings import OpenAIEmbeddings
@@ -33,19 +37,25 @@ embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
 
 from langchain_core.vectorstores import InMemoryVectorStore
 
-vector_store = InMemoryVectorStore(embeddings)
+# vector_store = InMemoryVectorStore(embeddings)
 
 
 # Function to create ChromaDB from PDF
-def create_chroma_db(pdf_file, keywords):
+def create_chroma_db(pdf_file, keywords,random_uuid):
     loader = PyPDFLoader(pdf_file)
     docs = loader.load()
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
     all_splits = text_splitter.split_documents(docs)
     print("all_splits", all_splits)
+    # vector_store = Chroma(
+    #     collection_name="example_collection",
+    #     embedding_function=embeddings,
+    #     persist_directory="./chromadb/",  # Where to save data locally, remove if not necessary
+    # )
+    # # Index chunks
+    # _ = Chroma.add_documents(documents=all_splits)
 
-    # Index chunks
-    _ = vector_store.add_documents(documents=all_splits)
+    vectorstore = Chroma.from_documents(documents=all_splits, embedding=embeddings,collection_name=random_uuid,persist_directory=f"./chromadb/{random_uuid}")
 
     # Define prompt for question-answering
     # prompt = hub.pull("rlm/rag-prompt")
@@ -68,7 +78,7 @@ def create_chroma_db(pdf_file, keywords):
     {question}
 
     For each keyword, please provide:
-    - Keyword: [concise solution or recommendation]
+    - concise solution or recommendation in the our database
 
 
     Helpful Answer:"""
@@ -82,7 +92,7 @@ def create_chroma_db(pdf_file, keywords):
 
     # Define application steps
     def retrieve(state: State):
-        retrieved_docs = vector_store.similarity_search(state["question"])
+        retrieved_docs = vectorstore.similarity_search(state["question"])
         return {"context": retrieved_docs}
 
     def generate(state: State):
@@ -134,8 +144,10 @@ if st.button("Process"):
             temp_file.write(pdf_file.read())
             temp_file_path = temp_file.name
         print("temp_file_pathtemp_file_path", temp_file_path)
+        random_uuid = str(uuid.uuid4())
+
         # Create ChromaDB
-        db = create_chroma_db(temp_file_path, keywords)
+        db = create_chroma_db(temp_file_path, keywords,random_uuid)
         # st.success("ChromaDB created successfully!")
 
         # Search in the ChromaDB
@@ -155,5 +167,13 @@ if st.button("Process"):
         # del db
         # os.remove(temp_file_path)
         # st.success("ChromaDB deleted successfully!")
+        directory_path = f"./chromadb/{random_uuid}"
+
+        # Check if the directory exists before attempting to delete
+        if os.path.exists(directory_path):
+            shutil.rmtree(directory_path)  # This will delete the directory and all its contents
+            print(f"Deleted directory: {directory_path}")
+        else:
+            print(f"Directory does not exist: {directory_path}")
     else:
         st.error("Please provide all inputs.")
