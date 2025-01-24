@@ -17,7 +17,7 @@ from typing_extensions import List, TypedDict
 # Load environment variables from .env file
 load_dotenv()
 # llm = ChatOpenAI(model="gpt-4o-mini")
-llm = ChatGroq(temperature=0, groq_api_key="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",
+llm = ChatGroq(temperature=0,
                model_name="mixtral-8x7b-32768")
 
 # if not os.environ.get("OPENAI_API_KEY"):
